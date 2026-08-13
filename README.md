@@ -1,161 +1,145 @@
 # 📍 GeoDemand Nagpur
 
-**A data-driven site selection tool for identifying optimal new coffee shop locations in Nagpur, India — built with geospatial analytics, public REST APIs, and population density modeling.**
+**Data-driven site selection for retail expansion — pinpointing optimal new coffee shop locations in Nagpur using geospatial analytics, live REST APIs, and population density modeling.**
 
-[![Python](https://img.shields.io/badge/Python-3.9+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
-[![Streamlit](https://img.shields.io/badge/Streamlit-App-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io/)
-[![Folium](https://img.shields.io/badge/Folium-Mapping-77B829?logo=leaflet&logoColor=white)](https://python-visualization.github.io/folium/)
-[![OpenStreetMap](https://img.shields.io/badge/Data-OpenStreetMap-7EBC6F?logo=openstreetmap&logoColor=white)](https://www.openstreetmap.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+![Python](https://img.shields.io/badge/Python-Pandas%20%7C%20NumPy-blue)
+![APIs](https://img.shields.io/badge/REST%20APIs-Overpass%20%7C%20Nominatim-orange)
+![Geospatial](https://img.shields.io/badge/Geospatial-Folium%20%7C%20Haversine-brightgreen)
+![Streamlit](https://img.shields.io/badge/Streamlit-Live%20App-FF4B4B)
 
----
-
-## 🧭 Overview
-
-Where should a new coffee shop open in Nagpur? **GeoDemand Nagpur** answers that question quantitatively instead of anecdotally.
-
-The pipeline geocodes 12 well-known Nagpur neighborhoods, models relative population density across a 315-point city grid using a distance-decay algorithm, pulls **88 real existing cafes/restaurants** from OpenStreetMap, and combines both signals into a single **Opportunity Score** — surfacing the pockets of the city with high foot-traffic potential and low existing competition. Results are rendered as an interactive Folium heatmap and a full Streamlit dashboard.
-
-> 🏆 **Top opportunity score found: 82.2/100** — a high-density zone with zero nearby competitors.
+🔗 **[View Live Interactive Dashboard](your-streamlit-url-here)**
 
 ---
 
-## ✨ Key Features
+## 📌 The Question
 
-| Feature | Description |
-|---|---|
-| 🌍 **Automated Geocoding** | Converts 12 named Nagpur neighborhoods into precise lat/lon anchors via the Nominatim API |
-| 📊 **Population Density Modeling** | Distance-decay model estimates relative density across a 315-point grid when authoritative census data isn't freely available |
-| ☕ **Live Competitor Data** | Pulls real cafes & restaurants (88 found: 65 restaurants, 23 cafes) from OpenStreetMap via the Overpass API |
-| 🧮 **Opportunity Scoring Engine** | Weighted formula (60% density, 40% low competition) ranks every grid point city-wide |
-| 🗺️ **Interactive Map** | Toggleable Folium layers: opportunity heatmap, competitor markers, top-10 recommended sites |
-| 📈 **Streamlit Dashboard** | Live KPIs, adjustable filters, and a sortable table of ranked locations |
+*"If a coffee brand wanted to open its next outlet in Nagpur, where should it go?"*
+
+This project answers that question with data instead of guesswork — building a full geospatial analytics pipeline from live API sourcing to an interactive, scored opportunity map covering the entire city.
 
 ---
 
-## 🗺️ Live Demo
+## 🔑 Key Results
 
-The interactive map (`nagpur_opportunity_map.html`) visualizes three layers you can toggle independently:
-
-- 🔥 **Opportunity Heatmap** — citywide density of scores
-- 🔴 **Existing Competitors** — every cafe/restaurant currently in Nagpur
-- ⭐ **Top 10 Recommended Locations** — best new-site candidates, ranked
-
-*(Screenshot below — or clone the repo and open the HTML file directly.)*
+- **Analyzed 315 grid points** across Nagpur, scored against **88 real, live-sourced competitor locations** (65 restaurants, 23 cafes) pulled directly from OpenStreetMap
+- **Top-ranked location** (21.15° N, 79.08° E — near Sitabuldi/Civil Lines) scored **82.2/100** on the Opportunity Index, combining strong estimated demand with manageable competition
+- Identified multiple **underserved high-density pockets** near Sadar (21.18° N, 79.08° E) scoring 79+ despite being adjacent to the city's commercial core — a genuine "hidden opportunity" signal a manual scouting process could easily miss
+- Average opportunity score across the city sits at **46.4/100**, meaning the model successfully differentiates strong locations from the rest of the map rather than flattening everything to "good"
 
 ---
 
-## 🏗️ How It Works — Pipeline
+## 🌐 Real-Time Data via REST APIs
+- Integrated the **OpenStreetMap Overpass API** to pull 88 live, real cafe and restaurant locations across Nagpur — no static/downloaded dataset
+- Integrated the **Nominatim Geocoding API** to programmatically resolve 12 key Nagpur neighborhoods (Sitabuldi, Dharampeth, Sadar, Civil Lines, and more) into precise coordinates, used as density anchor points
+- Built with multi-server retry logic and rate-limit-respecting delays for production-grade reliability, not just a one-shot script
 
-```
-1. geocode_nagpur_areas.py        →  nagpur_anchor_points.csv
-   Geocodes 12 Nagpur neighborhoods (Nominatim API)
+## 🗺️ Geospatial Modeling
+- Engineered a **distance-decay population density model** anchored to 12 known commercial/residential hubs, since authoritative ward-level census data for Nagpur is gated behind institutional or paid GIS access
+- Implemented the **Haversine formula** from scratch to calculate real-world distances between coordinates on Earth's curved surface — not flat-plane approximations
+- Generated a **315-point analytical grid** spanning the full city, scoring every point on estimated demand
 
-2. estimate_density.py            →  nagpur_density_grid.csv
-   Builds a 315-point city grid, estimates relative population
-   density via a distance-decay model anchored to known hubs
+## 🎯 Opportunity Scoring
+- Calculated competitor density within a **1km walkable radius** for every grid point
+- Combined population density (60%) and low competition (40%) into a single weighted **Opportunity Score** — weights are explicit, named variables in the code, not hidden assumptions
+- Surfaced the top-ranked, underserved locations for new store placement, ready to explore on the interactive map
 
-3. fetch_nagpur_cafes_restaurants.py  →  nagpur_food_places.csv
-   Pulls live cafe/restaurant data for Nagpur (Overpass API)
-
-4. calculate_opportunity_score.py →  nagpur_opportunity_scores.csv
-   Counts competitors within 1km of each grid point, then computes:
-      Opportunity Score = 0.6 × Density Score + 0.4 × (100 − Competitor Score)
-
-5. build_map.py                   →  nagpur_opportunity_map.html
-   Renders the final interactive Folium map
-
-6. app.py
-   Streamlit dashboard wrapping the full analysis in a live UI
-```
-
-Every modeling decision — hub weights, scoring formula, distance thresholds — is documented directly in code comments rather than hidden behind a black box.
-
----
-
-## 🚀 Getting Started
-
-### Prerequisites
-- Python 3.9+
-- pip
-
-### Installation
-
-```bash
-git clone https://github.com/Aasthakolhe/GeoDemand-Nagpur.git
-cd GeoDemand-Nagpur
-pip install -r requirements.txt
-```
-
-### Run the pipeline
-
-```bash
-python scripts/geocode_nagpur_areas.py
-python scripts/estimate_density.py
-python scripts/fetch_nagpur_cafes_restaurants.py
-python scripts/calculate_opportunity_score.py
-python scripts/build_map.py
-```
-
-### Launch the dashboard
-
-```bash
-streamlit run app.py
-```
+## 📊 Interactive Visualization
+- Built a live dashboard using **Streamlit** and **Folium**
+- Features a dynamic opportunity heatmap, real competitor markers, top-10 recommended location pins with detailed popups, and adjustable filters (top-N locations, minimum score threshold, layer toggles)
 
 ---
 
 ## 🛠️ Tech Stack
 
-- **Python** — pandas, numpy for data processing
-- **Streamlit** + **streamlit-folium** — interactive dashboard
-- **Folium** — map rendering & heatmaps
-- **OpenStreetMap Nominatim API** — geocoding
-- **OpenStreetMap Overpass API** — live competitor/POI data
-- **Haversine distance** — geospatial proximity calculations
+| Tool | Purpose |
+|------|---------|
+| **Python (Pandas, NumPy)** | Data processing, grid generation, distance calculations |
+| **Requests** | REST API integration (Overpass, Nominatim) |
+| **Folium** | Interactive map rendering (heatmaps, markers, layers) |
+| **Streamlit** | Live, interactive web dashboard |
+| **OpenStreetMap Overpass API** | Real-time competitor (cafe/restaurant) location data |
+| **OpenStreetMap Nominatim API** | Geocoding neighborhood names to coordinates |
 
 ---
 
-## 📂 Project Structure
+## 📂 Repository Contents
 
+| File | Description |
+|------|--------------|
+| `fetch_nagpur_cafes_restaurants.py` | Step 1 — Pulls real cafe/restaurant data via the Overpass REST API |
+| `geocode_nagpur_areas.py` | Step 2 — Geocodes 12 key Nagpur neighborhoods via the Nominatim REST API |
+| `estimate_density.py` | Step 3 — Builds a 315-point grid and estimates population density using distance-decay modeling |
+| `calculate_opportunity_score.py` | Step 4 — Combines density and competitor data into a final Opportunity Score |
+| `build_map.py` | Step 5 — Generates a standalone interactive HTML map |
+| `app.py` | Streamlit dashboard source code (live app) |
+| `requirements.txt` | Python dependencies |
+| `data/nagpur_food_places.csv` | 88 real competitor locations (Overpass API output) |
+| `data/nagpur_anchor_points.csv` | 12 geocoded neighborhood hub coordinates (Nominatim API output) |
+| `data/nagpur_density_grid.csv` | 315-point grid with estimated population density scores |
+| `data/nagpur_opportunity_scores.csv` | Final scored dataset — density, competition, and combined opportunity scores |
+
+---
+
+## 🧠 Methodology & Key Decisions
+
+This project intentionally documents its analytical judgment calls rather than hiding them — reflecting how real-world analytics works when perfect data isn't available:
+
+- **Why a distance-decay model instead of official ward data?** Ward-level and pincode-level population data for Nagpur is gated behind institutional (MIT-only) or paid GIS vendor access. Rather than compromise on data authenticity, this project uses a transparent, documented proxy: relative density estimated from known commercial/residential hub locations.
+- **Why 60/40 weighting for density vs. competition?** Foot traffic and population density were judged to matter more than complete market exclusivity for a coffee shop — a stated, reasoned business assumption rather than an unexplained default.
+- **Why a 1km competitor radius?** Chosen to represent a realistic walkable catchment area for a cafe or coffee shop.
+
+---
+
+## 📊 Dashboard Preview
+
+The live dashboard includes:
+- **KPI cards**: grid points analyzed, existing competitor count, top opportunity score, average nearby competitors
+- **Interactive heatmap** of opportunity scores across Nagpur
+- **Real competitor markers** (red) and **top recommended locations** (green stars) with detailed popups
+- **Adjustable controls**: number of top locations shown, heatmap/competitor layer toggles, minimum score filter
+- **Ranked results table** of the best-scoring locations
+
+---
+
+## 🚀 How to Run This Project Locally
+
+```bash
+git clone https://github.com/Aasthakolhe/GeoDemand-Nagpur.git
+cd GeoDemand-Nagpur
+pip install -r requirements.txt
+
+# Re-run the full pipeline (optional - CSVs are already included)
+python fetch_nagpur_cafes_restaurants.py
+python geocode_nagpur_areas.py
+python estimate_density.py
+python calculate_opportunity_score.py
+
+# Launch the dashboard
+streamlit run app.py
 ```
-GeoDemand-Nagpur/
-├── data/                          # Generated CSV outputs at each pipeline stage
-├── output/                        # Final interactive HTML map
-├── scripts/                       # Pipeline scripts (geocode → density → score → map)
-├── app.py                         # Streamlit dashboard
-├── requirements.txt
-├── LICENSE
-└── README.md
-```
 
 ---
 
-## 📌 Methodology Notes
+## 📈 Future Improvements
 
-- **Why distance-decay density instead of census data?** Ward/pincode-level population data for Nagpur isn't freely available outside paid GIS providers. A distance-decay model anchored to well-known commercial hubs is a transparent, defensible proxy for *relative* density — this project estimates relative opportunity, not exact population counts.
-- **Why 60/40 weighting?** A judgment call, documented in `calculate_opportunity_score.py`, favoring foot-traffic potential slightly over pure white-space — easily tunable for different business types.
-- **Data freshness:** Competitor data reflects a live OpenStreetMap snapshot at the time of the last pipeline run.
-
----
-
-## 🔮 Future Improvements
-
-- [ ] Incorporate real foot-traffic or transit-stop data
-- [ ] Add rent/commercial real-estate cost layer
-- [ ] Support other cities via config-driven anchor lists
-- [ ] Cache Overpass/Nominatim responses to reduce repeated API calls
+- Replace the distance-decay proxy with official ward-level census data if/when freely accessible
+- Extend the pipeline to support any city by parameterizing the bounding box and neighborhood list
+- Add a business-type selector (restaurants, gyms, pharmacies, etc.) instead of a fixed coffee shop focus
+- Incorporate foot traffic or transit accessibility data as an additional scoring factor
 
 ---
 
-## 👩‍💻 Project By
+## 🎯 Why This Project
+
+Location intelligence is a real, high-value discipline used by companies like Starbucks, Chipotle, and food-delivery platforms to guide expansion decisions. This project demonstrates that same analytical workflow end-to-end — live API integration, geospatial modeling, transparent handling of data limitations, and an interactive decision-support tool — using Nagpur as a real, grounded case study.
+
+---
+
+## 📬 Contact
 
 **Aastha Kolhe**
-
-If you find this project useful, consider ⭐ starring the repo!
+📧 aasthakolhe04@gmail.com | [LinkedIn](https://www.linkedin.com/in/aastha-kolhe)
 
 ---
 
-## 📄 License
-
-Distributed under the MIT License. See [LICENSE](LICENSE) for details.
+⭐ If you found this project useful, consider giving it a star on GitHub!
