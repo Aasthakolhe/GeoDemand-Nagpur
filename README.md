@@ -7,7 +7,7 @@
 ![Geospatial](https://img.shields.io/badge/Geospatial-Folium%20%7C%20Haversine-brightgreen)
 ![Streamlit](https://img.shields.io/badge/Streamlit-Live%20App-FF4B4B)
 
-🔗 **[View Live Interactive Dashboard]([https://geodemand-nagpur-9zs9bdpk9qgzsnw3owxm4x.streamlit.app/])**
+🔗 **[View Live Interactive Dashboard](https://geodemand-nagpur-9zs9bdpk9qgzsnw3owxm4x.streamlit.app/)**
 
 ---
 
